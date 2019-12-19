@@ -1,56 +1,52 @@
 class Flappy{
     constructor(canvas){
-        this.canvas = canvas;
+        //STATE
         this.state = 'inited';
         this.points = 0;
-        this.pointer;
-        this.bird;
-        this.columnsInterval;
-        this.engineInterval;
-        this.currentCol;
         this.currentColIndex = 0;
-        this.columns = [];
+        // ELEMS
+        this.canvas = canvas;
+        this.output;
+        this.bird;
+        this.menu;
+        this.button;
+        this.currentCol;
+        this.allColumns = [];
+        // INTERVALS
+        this.engineInterval;
+        this.columnsInterval;
     }
     init(){
         Object.assign(this.canvas.style, {
-            width:'400px',
-            height:'800px',
-            background:'#3497ed',
-            overflow:'hidden',
-            position:'relative'
-        });
+            backgroundPositionX:'0px',
+        })
         const bird = document.createElement('div');
         bird.id = 'bird';
-        Object.assign(bird.style, {
-            width:'40px',
-            height:'40px',
-            background:'#ffff00',
-            position:'absolute',
-            top:'100px',
-            left:'80px'
-        });
         this.bird = bird;
         this.canvas.appendChild(bird);
-        const pointer = document.createElement('p');
-        Object.assign(pointer.style, {
-            position:'absolute',
-            right:'0px',
-            left:'0px',
-            top:'20px',
-            fontSize:'30px',
-            color:'#fff',
-            zIndex:'9',
-            fontWeight:'700',
-            textAlign:'center',
-            margin:'auto'
-        });
-        canvas.appendChild(pointer);
-        this.pointer = pointer;
-        window.addEventListener('keypress', ()=>{this.controlsHandler()});
-        this.canvas.addEventListener('click', ()=>{this.controlsHandler()});
+        
+        const output = document.createElement('p');
+        output.id = 'output';
+        output.innerHTML = 'Welcome!';
+        canvas.appendChild(output);
+        this.output = output;
+
+        const menu = document.createElement('div');
+        menu.id = 'menu';
+        menu.className = 'active';
+        const playButton = document.createElement('button');
+        playButton.innerHTML = 'PLAY';
+        menu.appendChild(playButton);
+        this.button = playButton;
+        this.menu = menu;
+        canvas.appendChild(menu);
+        
+        window.addEventListener('keypress', (e)=>{this.controlsHandler(e)});
+        this.canvas.addEventListener('click', (e)=>{this.controlsHandler(e)});
     }
     start(){
         this.state = 'playing';
+        this.menu.className = '';
         const map = [350, 250, 350, 100, 200];
         function* colGenerator(array){
             let i = -1;
@@ -72,21 +68,38 @@ class Flappy{
         }, 10);
         setTimeout(()=>{
             this.currentColIndex = 0;
-            this.currentCol = this.columns[0];
+            this.currentCol = this.allColumns[0];
         }, 2501);
     }
     end(){
         clearInterval(this.engineInterval);
         clearInterval(this.columnsInterval);
-        this.pointer.innerHTML = 'GAME OVER!';
+        this.output.innerHTML = 'GAME OVER!';
+        this.button.innerHTML = 'REPLAY';
+        this.menu.className = 'active';
         this.state = 'end';
     }
-    controlsHandler(){
+    replay(){
+        this.menu.className = '';
+        this.bird.style.top = 300+'px';
+        this.points = 0;
+        this.currentCol = null;
+        this.currentColIndex = null;
+        this.allColumns.forEach(col=>{
+            col.remove();
+        })
+        this.allColumns = [];
+        this.start();
+    }
+    controlsHandler(e){
         if(this.state === 'playing'){
             this.fly();
         }
-        else if(this.state === 'inited'){
+        else if(this.state === 'inited' && e.target.tagName === 'BUTTON'){
             this.start();
+        }
+        else if(this.state === 'end' && e.target.tagName === 'BUTTON'){
+            this.replay();
         }
     }
     fly(){
@@ -106,32 +119,18 @@ class Flappy{
         topHeight += 'px';
         botHeight += 'px';
         Object.assign(column.style, {
-            width:'80px',
-            height:'100%',
-            position:'absolute',
             right:'-80px',
-            top:'0px',
         })
         Object.assign(top.style, {
-            width:'80px',
             height:topHeight,
-            background:'#52d138',
-            position:'absolute',
-            top:'0px',
-            left:'0px'
         });
         Object.assign(bot.style, {
-            width:'80px',
             height:botHeight,
-            background:'#52d138',
-            position:'absolute',
-            bottom:'0px',
-            left:'0px'
         });
         column.appendChild(top);
         column.appendChild(bot);
         this.canvas.appendChild(column);
-        this.columns.push(column);
+        this.allColumns.push(column);
     }
     engine(){
         if(this.bird.offsetTop < this.canvas.offsetHeight - 40){
@@ -139,15 +138,17 @@ class Flappy{
         }else{
             this.end();
         }
-        this.columns.forEach(col=>{
+        const newBgPos = parseInt(this.canvas.style.backgroundPositionX.replace('px',''));
+        this.canvas.style.backgroundPositionX = (newBgPos - 1) + 'px';
+        this.allColumns.forEach(col=>{
             let right = parseInt(col.style.right.replace('px',''));
             right = right+1+'px';
             col.style.right = right;
         });
-        if(this.points !== this.pointer.innerHTML){
-            this.pointer.innerHTML = this.points;
+        if(this.points !== this.output.innerHTML){
+            this.output.innerHTML = this.points;
         }
-        if(typeof this.currentCol !== 'undefined'){
+        if(typeof this.currentCol !== 'undefined' && this.currentCol !== null){
             this.collisionDetect();
         }
     }
@@ -185,7 +186,7 @@ class Flappy{
     }
     passed(){
         this.currentColIndex = this.currentColIndex+1;
-        this.currentCol = this.columns[this.currentColIndex];
+        this.currentCol = this.allColumns[this.currentColIndex];
         this.points = this.points+1;
     }
 }
