@@ -47,7 +47,7 @@ class Flappy{
     start(){
         this.state = 'playing';
         this.menu.className = '';
-        const map = [350, 250, 350, 100, 200];
+        const map = [150, 50, 150, 300, 200, 140, 300];
         function* colGenerator(array){
             let i = -1;
             while(true){
